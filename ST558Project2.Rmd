@@ -13,9 +13,21 @@ library(caret)
 
 # Introduction
 
-# Reading in Data
+# Data
 
 ```{r}
+#Reading in the day dataset
 day <- read_csv("day.csv")
-hour <- read_csv("hour.csv")
+
+#Randomly sample from data
 ```
+
+# Summarizations
+
+# Modeling
+
+# Comparison
+
+# Automation
+
+
