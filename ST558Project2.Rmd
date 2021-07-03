@@ -9,20 +9,96 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(caret)
+library(grid)
+library(gridExtra)
+library(knitr)
+Weekdays <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
 ```
 
 # Introduction
 
+In this report, we will be analyze the day.csv bike sharing data set. We will start by summarizing the data to get an idea of the data set. Then we will try to predict the number of users using predictive models. The data set contains the count of bike share users per day over 731 days along with the weather and climate data associated with each day. The response variable that we are trying to predict is the `cnt` variable which a count of all biking sharing users in the given day. Our goal is to predict `cnt` based on what season it is, `season`, whether it is a workday or not, `workday`, how the temperature feels that day, `atemp`, the wind speed that day, `windspeed`, the humidity, `hum`, and more. We will predict the count of bike shares with 4 models: 2 different linear regression models, one Random Forest model, and one Boosted Tree model. After we fit the 4 models, we compare the models on a test set and declare the winner. The winner will be the model that predicts `cnt` the best; this will be the model with the smallest Test MSE.   
+
 # Data
 
 ```{r}
-#Reading in the day dataset
-day <- read_csv("day.csv")
+day <- 2 #Monday
+
+#Reading in the day dataset and filtered for Monday
+Day <- read_csv("day.csv") %>% 
+  mutate(weekday = weekday + 1) %>% 
+  filter(weekday == day)
 
 #Randomly sample from data
+set.seed(123)
+TrainIndex <- createDataPartition(Day$cnt, p = .7, list = FALSE)
+Day.Train <- Day[TrainIndex,]
+Day.Test <- Day[-TrainIndex,]
 ```
 
 # Summarizations
+
+Now that we read the data in, we can start summarizing and visualizing. We will start by looking at the summary statistics of the quantitative variables. 
+```{r}
+Day.Train %>% 
+  select(cnt, atemp, hum, windspeed) %>%
+  apply(MARGIN= 2,FUN = summary) %>%
+  round(3) %>%
+  kable(caption = paste0("Summary of Quantitative variables (",Weekdays[day],")"),
+        row.names = TRUE) 
+```
+
+Now that we have some summary statistics for the data, lets build some plots. For linear regression with a continuous response, `cnt`, the model requires the assumption that the response variable follows a normal distribution. If our sample size is large enough, the Central Limit Theorem will allow us to fit even if we stray slighly from normality. We can visualize the distribution of the response with a histogram and a density contour overlayed on top. If `cnt` follows a normal distribution, the histogram and density contour should be bell shaped. If it is not bell shaped, then a linear regression might not be the best model for prediction.  
+```{r}
+ggplot(data = Day.Train, mapping = aes(x=cnt)) +
+  geom_histogram(aes(y = ..density..), bins = 20) + 
+  geom_density(kernal = "gaussian", size = 2, color = 'red') +
+  labs(title=paste0("Histogram of the Number Bike Sharing on ",Weekdays[day]), 
+       x = "Number of total bike sharing on a given day")
+```
+
+
+Now that we have observed the shape of the sample distribution of `cnt`, we can now explore the relationships between `cnt` and the quantitative predictors. We will do so by creating scatterplots with `cnt` and the three quantitative predictors of interest. The plots below will contain the scatter plot, the linear model line, and the correlation between `cnt` and the predictor. Predictors with a high correlation will likely be good predictors for our models.  
+  
+```{r}
+Cor1 <- round(cor(Day.Train$cnt,Day.Train$atemp),3)
+grob1 = grobTree(textGrob(paste0("Pearson Correlation = ", Cor1), 
+                          x = 0.63, y = 0.10, hjust = 0, 
+                          gp = gpar(col = "blue", fontsize = 11, fontface = "bold")))
+
+ggplot(data = Day.Train, mapping = aes(x=cnt, y=atemp))+
+  geom_point()+
+  geom_smooth(method = lm)+
+  labs(title = paste0("Scatterplot for Count vs Temperature (",Weekdays[day],")"),
+       x = "Count of Total Bikes Shared", 
+       y = "Temperature") +
+  annotation_custom(grob1)
+
+Cor2 <- round(cor(Day.Train$cnt,Day.Train$hum),3)
+grob2 = grobTree(textGrob(paste0("Pearson Correlation = ", Cor2), 
+                          x = 0.63, y = 0.10, hjust = 0, 
+                          gp = gpar(col = "blue", fontsize = 11, fontface = "bold")))
+ggplot(data = Day.Train, mapping = aes(x=cnt, y=hum))+
+  geom_point() +
+  geom_smooth(method = lm) +
+  labs(title = paste0("Scatterplot for Count vs Humidity (",Weekdays[day],")"),
+       x = "Count of Total Bikes Shared", 
+       y = "Humidity") +
+  annotation_custom(grob2)
+
+Cor3 <- round(cor(Day.Train$cnt,Day.Train$windspeed),3)
+grob3 = grobTree(textGrob(paste0("Pearson Correlation = ", Cor3), 
+                          x = 0.63, y = 0.10, hjust = 0, 
+                          gp = gpar(col = "blue", fontsize = 11, fontface = "bold")))
+ggplot(data = Day.Train, mapping = aes(x=cnt, y=windspeed))+
+  geom_point()+
+  geom_smooth(method=lm) +
+  labs(title = paste0("Scatterplot for Count vs Wind Speed (",Weekdays[day],")"),
+       x = "Count of Total Bikes Shared", 
+       y = "Wind Speed") +
+  annotation_custom(grob3)
+
+```
 
 # Modeling
 
