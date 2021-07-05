@@ -17,11 +17,11 @@ Weekdays <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", 
 
 # Introduction
 
-In this report, we will be analyze the day.csv bike sharing data set. We will start by summarizing the data to get an idea of the data set. Then we will try to predict the number of users using predictive models. The data set contains the count of bike share users per day over 731 days along with the weather and climate data associated with each day. The response variable that we are trying to predict is the `cnt` variable which a count of all biking sharing users in the given day. Our goal is to predict `cnt` based on what season it is, `season`, whether it is a workday or not, `workday`, how the temperature feels that day, `atemp`, the wind speed that day, `windspeed`, the humidity, `hum`, and more. We will predict the count of bike shares with 4 models: 2 different linear regression models, one Random Forest model, and one Boosted Tree model. After we fit the 4 models, we compare the models on a test set and declare the winner. The winner will be the model that predicts `cnt` the best; this will be the model with the smallest Test MSE.   
+In this report, we will be analyze the day.csv bike sharing data set. We will start by summarizing the data to get an idea of the data set. Then we will try to predict the number of users using predictive models. The data set contains the count of bike share users per day over 731 days along with the weather and climate data associated with each day. The response variable that we are trying to predict is the `cnt` variable which a count of all biking sharing users (registered plus casual) in the given day. Our goal is to predict `cnt` based on what season it is, `season`; whether it is a workday or not, `workday`; the weather, `weathersit`; how the temperature feels that day, `atemp`; the wind speed that day, `windspeed`; and the humidity, `hum`. We will predict the count of bike shares with 4 models: 2 different linear regression models, 1 random forest model, and 1 boosted tree model. After we fit the 4 models, we compare the models on a test set and declare the winner. The winner will be the model that predicts `cnt` the best; this will be the model with the smallest Test MSE.   
 
 # Data
 
-```{r}
+```{r, message = FALSE}
 day <- 2 #Monday
 
 #Reading in the day dataset and filtered for Monday
@@ -39,6 +39,7 @@ Day.Test <- Day[-TrainIndex,]
 # Summarizations
 
 Now that we read the data in, we can start summarizing and visualizing. We will start by looking at the summary statistics of the quantitative variables. 
+
 ```{r}
 Day.Train %>% 
   select(cnt, atemp, hum, windspeed) %>%
@@ -49,14 +50,14 @@ Day.Train %>%
 ```
 
 Now that we have some summary statistics for the data, lets build some plots. For linear regression with a continuous response, `cnt`, the model requires the assumption that the response variable follows a normal distribution. If our sample size is large enough, the Central Limit Theorem will allow us to fit even if we stray slighly from normality. We can visualize the distribution of the response with a histogram and a density contour overlayed on top. If `cnt` follows a normal distribution, the histogram and density contour should be bell shaped. If it is not bell shaped, then a linear regression might not be the best model for prediction.  
+
 ```{r}
 ggplot(data = Day.Train, mapping = aes(x=cnt)) +
   geom_histogram(aes(y = ..density..), bins = 20) + 
-  geom_density(kernal = "gaussian", size = 2, color = 'red') +
+  geom_density(kernel = "gaussian", size = 2, color = 'red') +
   labs(title=paste0("Histogram of the Number Bike Sharing on ",Weekdays[day]), 
        x = "Number of total bike sharing on a given day")
 ```
-
 
 Now that we have observed the shape of the sample distribution of `cnt`, we can now explore the relationships between `cnt` and the quantitative predictors. We will do so by creating scatterplots with `cnt` and the three quantitative predictors of interest. The plots below will contain the scatter plot, the linear model line, and the correlation between `cnt` and the predictor. Predictors with a high correlation will likely be good predictors for our models.  
   
@@ -98,6 +99,49 @@ ggplot(data = Day.Train, mapping = aes(x=cnt, y=windspeed))+
        y = "Wind Speed") +
   annotation_custom(grob3)
 
+```
+
+Our other variables of interest are qualitative, so we will create contingency tables to see how many observations fall under each category.
+
+```{r}
+#Changing to factoors and renaming
+Day.Train$season <- factor(Day.Train$season, c(1:4), 
+                           c("Winter", "Spring", "Summer", "Fall"))
+Day.Train$workingday <- factor(Day.Train$workingday, c(0, 1), c("No", "Yes"))
+Day.Train$weathersit <- factor(Day.Train$weathersit, c(1, 2), c("Good", "Bad"))
+
+#Contingency tables for each categorical variable
+kable(table(Day.Train$season), caption = "Frequency by Season")
+kable(table(Day.Train$workday), caption = "Frequency by Workday")
+kable(table(Day.Train$weathersit), caption = "Frequency by Weather")
+```
+
+For the qualitative data we can look at boxplots to explore each level of the variables in relation to `cnt`. In each plot we will group by the different levels and plot the five number summary of the `cnt` variable. Using the plots below we will be able to see if there is a distinct difference between the levels of the categorical factors, which would help determine if the variable would be a good predictor for our models. 
+
+```{r}
+#Season
+ggplot(Day.Train, aes(season, cnt)) + 
+  geom_boxplot() +
+  geom_jitter(aes(color = season)) +
+  labs(title = paste0("Boxplot for Count by Season (",Weekdays[day],")"),
+       x = "Season",
+       y = "Total Bike Shares")
+
+#Workday
+ggplot(Day.Train, aes(workday, cnt)) + 
+  geom_boxplot() +
+  geom_jitter(aes(color = workday)) +
+  labs(title = paste0("Boxplot for Count by Workday (",Weekdays[day],")"),
+       x = "Workday",
+       y = "Total Bike Shares")
+
+#Weathersit
+ggplot(Day.Train, aes(weathersit, cnt)) + 
+  geom_boxplot() +
+  geom_jitter(aes(color = weathersit)) +
+  labs(title = paste0("Boxplot for Count by Weather (",Weekdays[day],")"),
+       x = "Weather",
+       y = "Total Bike Shares")
 ```
 
 # Modeling
