@@ -101,18 +101,35 @@ ggplot(data = Day.Train, mapping = aes(x=cnt, y=windspeed))+
 
 ```
 
-Our other variables of interest are qualitative, so we will create contingency tables to see how many observations fall under each category.
+Our other variables of interest are qualitative are:
+
+* `season` indicates the season:
+    + 1 = winter
+    + 2 = spring
+    + 3 = summer
+    + 4 = fall
+* `workingday` is an indicator for if the day is a weekend/holiday
+    + 0 = A weekend or holiday
+    + 1 = Not a weekend nor holiday
+* `weathersit` indicates the weather category
+    + 1 = Clear, Few clouds, Partly cloudy
+    + 2 = Mist & Cloudy, Mist & Broken clouds, Mist & Few clouds, Mist
+    + 3 = Light Snow, Light Rain & Thunderstorm & Scattered clouds, Light Rain & Scattered clouds
+    + 4 = Heavy Rain & Ice Pallets & Thunderstorm & Mist, Snow & Fog
+
+We will create contingency tables to see how many observations fall under each category.
 
 ```{r}
 #Changing to factoors and renaming
 Day.Train$season <- factor(Day.Train$season, c(1:4), 
                            c("Winter", "Spring", "Summer", "Fall"))
 Day.Train$workingday <- factor(Day.Train$workingday, c(0, 1), c("No", "Yes"))
-Day.Train$weathersit <- factor(Day.Train$weathersit, c(1, 2), c("Good", "Bad"))
+Day.Train$weathersit <- factor(Day.Train$weathersit, c(1, 2, 3, 4), 
+                               c("Level 1", "Level 2", "Level 3", "Level 4"))
 
 #Contingency tables for each categorical variable
 kable(table(Day.Train$season), caption = "Frequency by Season")
-kable(table(Day.Train$workday), caption = "Frequency by Workday")
+kable(table(Day.Train$workingday), caption = "Frequency by Workingday")
 kable(table(Day.Train$weathersit), caption = "Frequency by Weather")
 ```
 
@@ -128,11 +145,11 @@ ggplot(Day.Train, aes(season, cnt)) +
        y = "Total Bike Shares")
 
 #Workday
-ggplot(Day.Train, aes(workday, cnt)) + 
+ggplot(Day.Train, aes(workingday, cnt)) + 
   geom_boxplot() +
-  geom_jitter(aes(color = workday)) +
+  geom_jitter(aes(color = workingday)) +
   labs(title = paste0("Boxplot for Count by Workday (",Weekdays[day],")"),
-       x = "Workday",
+       x = "Workingday",
        y = "Total Bike Shares")
 
 #Weathersit
