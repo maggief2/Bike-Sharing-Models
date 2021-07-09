@@ -6,7 +6,7 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, error = FALSE, warning = FALSE, cache = TRUE)
 library(tidyverse)
 library(caret)
 library(grid)
@@ -27,13 +27,20 @@ day <- 2 #Monday
 #Reading in the day dataset and filtered for Monday
 Day <- read_csv("day.csv") %>% 
   mutate(weekday = weekday + 1) %>% 
-  filter(weekday == day)
+  filter(weekday == day) %>%
+  select(-instant,-dteday, -yr, -casual, -registered) %>%
+  mutate(season = factor(season, c(1:4), 
+                           c("Winter", "Spring", "Summer", "Fall")),
+         workingday = factor(workingday, c(0, 1), c("No", "Yes")),
+         weathersit = factor(weathersit, c(1, 2, 3, 4), 
+                               c("Level 1", "Level 2", "Level 3", "Level 4")))
 
 #Randomly sample from data
 set.seed(123)
 TrainIndex <- createDataPartition(Day$cnt, p = .7, list = FALSE)
 Day.Train <- Day[TrainIndex,]
 Day.Test <- Day[-TrainIndex,]
+
 ```
 
 # Summarizations
@@ -71,7 +78,7 @@ Now that we have observed the shape of the sample distribution of `cnt`, we can 
 ```{r}
 Cor1 <- round(cor(Day.Train$cnt,Day.Train$atemp),3)
 grob1 = grobTree(textGrob(paste0("Pearson Correlation = ", Cor1), 
-                          x = 0.63, y = 0.10, hjust = 0, 
+                          x = 0.5, y = 0.10, hjust = 0, 
                           gp = gpar(col = "blue", fontsize = 11, fontface = "bold")))
 
 ggplot(data = Day.Train, mapping = aes(x=cnt, y=atemp))+
@@ -84,7 +91,7 @@ ggplot(data = Day.Train, mapping = aes(x=cnt, y=atemp))+
 
 Cor2 <- round(cor(Day.Train$cnt,Day.Train$hum),3)
 grob2 = grobTree(textGrob(paste0("Pearson Correlation = ", Cor2), 
-                          x = 0.63, y = 0.10, hjust = 0, 
+                          x = 0.5, y = 0.10, hjust = 0, 
                           gp = gpar(col = "blue", fontsize = 11, fontface = "bold")))
 ggplot(data = Day.Train, mapping = aes(x=cnt, y=hum))+
   geom_point() +
@@ -96,7 +103,7 @@ ggplot(data = Day.Train, mapping = aes(x=cnt, y=hum))+
 
 Cor3 <- round(cor(Day.Train$cnt,Day.Train$windspeed),3)
 grob3 = grobTree(textGrob(paste0("Pearson Correlation = ", Cor3), 
-                          x = 0.63, y = 0.10, hjust = 0, 
+                          x = 0.5, y = 0.10, hjust = 0, 
                           gp = gpar(col = "blue", fontsize = 11, fontface = "bold")))
 ggplot(data = Day.Train, mapping = aes(x=cnt, y=windspeed))+
   geom_point()+
@@ -129,12 +136,6 @@ Our other variables of interest are qualitative:
 We will create contingency tables to see how many observations fall under each category since present observations, or the lack of, may indicate which categories have more bike sharing uses.
 
 ```{r}
-#Changing to factors and renaming
-Day.Train$season <- factor(Day.Train$season, c(1:4), 
-                           c("Winter", "Spring", "Summer", "Fall"))
-Day.Train$workingday <- factor(Day.Train$workingday, c(0, 1), c("No", "Yes"))
-Day.Train$weathersit <- factor(Day.Train$weathersit, c(1, 2, 3, 4), 
-                               c("Level 1", "Level 2", "Level 3", "Level 4"))
 
 #Contingency tables for each categorical variable
 kable(table(Day.Train$season), caption = "Frequency by Season")
@@ -174,30 +175,69 @@ ggplot(Day.Train, aes(weathersit, cnt)) +
 
 ## Linear regression
 
-A linear regression model fits explanatory variable(s) to a response variable. The coefficients for the variables are given based on the line that would provide the smallest number when calculating the squared difference between the observed values to the expected values along the line. If there is a singular explanatory variable to predict the explanatory variable, it would be considered a simple linear regression. If there are more than one variable, interaction terms, and/or polynomial terms then it is considered mulitple linear regression. 
+A linear regression model fits explanatory variable(s) to a response variable. The coefficients for the variables are given based on the line that would provide the smallest number when calculating the squared difference between the observed values to the expected values along the line. If there is a singular explanatory variable to predict the explanatory variable, it would be considered a simple linear regression. If there are more than one variable, interaction terms, and/or polynomial terms then it is considered multiple linear regression. 
 
 ```{r}
-#SLR with temperature as the explanatory variable
-model1 <- lm(cnt ~ atemp, data = Day.Train)
-summary(model1)
+lm1.fit <- lm(cnt ~ atemp*season, data = Day.Train)
 
-#Model with season indicator variables
-model2 <- lm(cnt ~ season, data = Day.Train)
-summary(model2)
 
-#MLR models
-model3 <- lm(cnt ~ atemp*season, data = Day.Train)
-summary(model3)
+lm2.fit <- lm(cnt~ ., data = Day.Train)
+lm2.fit <- step(lm2.fit, trace = FALSE, direction = "both")
 
-model4 <- lm(cnt ~ season*workingday, data = Day.Train)
-summary(model4)
 ```
 
 ## Random Forest
+```{r}
+p <- ncol(Day.Train)-1
+rf.fit <- train(cnt ~ ., data = Day.Train, 
+                method = "rf", 
+                trControl = trainControl(method = "repeatedcv",
+                                         number = 10,
+                                         repeats = 5),
+                tuneGrid = data.frame(mtry = c(1:p,sqrt(p))))
+
+```
 
 ## Boosted Tree
+```{r, echo=TRUE, results='hide'}
+B <- c(500,1000,1500,2500,5000)
+lambda <- c(0.01, 0.001)
+d <- 1:p
+min <- 1
+tunegrid <- expand.grid(B,lambda,d, min)
+names(tunegrid) <- c("n.trees","shrinkage","interaction.depth","n.minobsinnode")
+boosted.fit <- train(cnt ~. , data = Day.Train,
+                     method = "gbm",
+                     trControl = trainControl(method = "repeatedcv",
+                                         number = 10,
+                                         repeats = 5),
+                     tuneGrid = tunegrid)
+```
 
 # Comparison
+```{r}
+lm1.pred <- predict(lm1.fit, newdata=Day.Test)
+lm1.RMSE <- postResample(lm1.pred,Day.Test$cnt)[[1]]
+
+lm2.pred <- predict(lm2.fit, newdata=Day.Test)
+lm2.RMSE <- postResample(lm2.pred,Day.Test$cnt)[[1]]
+
+rf.pred <- predict(rf.fit, newdata = Day.Test)
+rf.RMSE <- postResample(rf.pred,Day.Test$cnt)[[1]]
+
+boosted.pred <- predict(boosted.fit, newdata = Day.Test)
+boosted.RMSE <- postResample(boosted.pred,Day.Test$cnt)[[1]]
+
+RMSE <- data.frame( Model = c("LM1", "LM2", "RF", "Boosted"),
+                    RMSE = c(lm1.RMSE, lm2.RMSE, rf.RMSE, boosted.RMSE))
+kable(RMSE)
+```
+
+```{r, echo=FALSE}
+Models <- c("Linear Model 1", "Linear Model 2", "The Random Forest Model", "The Boosted Tree Model")
+```
+
+The model with the lowest RMSE is `r Models[which.min(RMSE$RMSE)]` with an RMSE of `r RMSE$RMSE[which.min(RMSE$RMSE)]`. `r Models[which.min(RMSE$RMSE)]` is the **winner** for `r Weekdays[day]`'s data!
 
 # Automation
 
