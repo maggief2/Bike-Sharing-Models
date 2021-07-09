@@ -38,7 +38,14 @@ Day.Test <- Day[-TrainIndex,]
 
 # Summarizations
 
-Now that we read the data in, we can start summarizing and visualizing. We will start by looking at the summary statistics of the quantitative variables. 
+## Quantitative Variables
+
+Now that we read the data in, we can start summarizing and visualizing. We will start by looking at the summary statistics of the quantitative variables:
+
+* `atemp` the normalized feeling temperature in Celsius
+* `hum` the normalized humidity
+* `windspeed` the normalized wind speed
+
 
 ```{r}
 Day.Train %>% 
@@ -101,13 +108,15 @@ ggplot(data = Day.Train, mapping = aes(x=cnt, y=windspeed))+
 
 ```
 
-Our other variables of interest are qualitative are:
+## Qualitative Variables
+
+Our other variables of interest are qualitative:
 
 * `season` indicates the season:
-    + 1 = winter
-    + 2 = spring
-    + 3 = summer
-    + 4 = fall
+    + 1 = Winter
+    + 2 = Spring
+    + 3 = Summer
+    + 4 = Fall
 * `workingday` is an indicator for if the day is a weekend/holiday
     + 0 = A weekend or holiday
     + 1 = Not a weekend nor holiday
@@ -117,10 +126,10 @@ Our other variables of interest are qualitative are:
     + 3 = Light Snow, Light Rain & Thunderstorm & Scattered clouds, Light Rain & Scattered clouds
     + 4 = Heavy Rain & Ice Pallets & Thunderstorm & Mist, Snow & Fog
 
-We will create contingency tables to see how many observations fall under each category.
+We will create contingency tables to see how many observations fall under each category since present observations or the lack of may indicate which categories have more bike sharing uses.
 
 ```{r}
-#Changing to factoors and renaming
+#Changing to factors and renaming
 Day.Train$season <- factor(Day.Train$season, c(1:4), 
                            c("Winter", "Spring", "Summer", "Fall"))
 Day.Train$workingday <- factor(Day.Train$workingday, c(0, 1), c("No", "Yes"))
@@ -162,6 +171,31 @@ ggplot(Day.Train, aes(weathersit, cnt)) +
 ```
 
 # Modeling
+
+## Linear regression
+
+A linear regression model fits explanatory variable(s) to a response variable. The coefficients for the variables are given based on the line that would provide the smallest number when calculating the squared difference between the observed values to the expected values along the line. If there is a singular explanatory variable to predict the explanatory variable, it would be considered a simple linear regression. If there are more than one variable, interaction terms, and/or polynomial terms then it is considered mulitple linear regression. 
+
+```{r}
+#SLR with temperature as the explanatory variable
+model1 <- lm(cnt ~ atemp, data = Day.Train)
+summary(model1)
+
+#Model with season indicator variables
+model2 <- lm(cnt ~ season, data = Day.Train)
+summary(model2)
+
+#MLR models
+model3 <- lm(cnt ~ atemp*season, data = Day.Train)
+summary(model3)
+
+model4 <- lm(cnt ~ season*workingday, data = Day.Train)
+summary(model4)
+```
+
+## Random Forest
+
+## Boosted Tree
 
 # Comparison
 
