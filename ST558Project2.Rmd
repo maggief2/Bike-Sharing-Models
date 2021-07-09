@@ -126,7 +126,7 @@ Our other variables of interest are qualitative:
     + 3 = Light Snow, Light Rain & Thunderstorm & Scattered clouds, Light Rain & Scattered clouds
     + 4 = Heavy Rain & Ice Pallets & Thunderstorm & Mist, Snow & Fog
 
-We will create contingency tables to see how many observations fall under each category since present observations or the lack of may indicate which categories have more bike sharing uses.
+We will create contingency tables to see how many observations fall under each category since present observations, or the lack of, may indicate which categories have more bike sharing uses.
 
 ```{r}
 #Changing to factors and renaming
