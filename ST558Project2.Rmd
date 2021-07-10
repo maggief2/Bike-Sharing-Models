@@ -136,7 +136,6 @@ Our other variables of interest are qualitative:
 We will create contingency tables to see how many observations fall under each category since present observations, or the lack of, may indicate which categories have more bike sharing uses.
 
 ```{r}
-
 #Contingency tables for each categorical variable
 kable(table(Day.Train$season), caption = "Frequency by Season")
 kable(table(Day.Train$workingday), caption = "Frequency by Workingday")
@@ -178,8 +177,7 @@ ggplot(Day.Train, aes(weathersit, cnt)) +
 A linear regression model fits explanatory variable(s) to a response variable. The coefficients for the variables are given based on the line that would provide the smallest number when calculating the squared difference between the observed values to the expected values along the line. If there is a singular explanatory variable to predict the explanatory variable, it would be considered a simple linear regression. If there are more than one variable, interaction terms, and/or polynomial terms then it is considered multiple linear regression. 
 
 ```{r}
-lm1.fit <- lm(cnt ~ atemp*season, data = Day.Train)
-
+lm1.fit <- lm(cnt ~ atemp, data = Day.Train)
 
 lm2.fit <- lm(cnt~ ., data = Day.Train)
 lm2.fit <- step(lm2.fit, trace = FALSE, direction = "both")
@@ -241,4 +239,9 @@ The model with the lowest RMSE is `r Models[which.min(RMSE$RMSE)]` with an RMSE 
 
 # Automation
 
+This code allows us to automatically generate an analysis report for each weekday variables.
+
+```{r}
+
+```
 
