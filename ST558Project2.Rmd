@@ -3,6 +3,8 @@ title: "ST558 Project 2"
 author: "Maggie Feng and Vito Leonardo"
 date: "July 16, 2021"
 output: github_document
+params: 
+      day: "Monday"
 ---
 
 ```{r setup, include=FALSE}
@@ -22,7 +24,7 @@ In this report, we will be analyze the day.csv bike sharing data set. We will st
 # Data
 
 ```{r, message = FALSE}
-day <- 2 #Monday
+day <- which.max(params$day==Weekdays)
 
 #Reading in the day dataset and filtered for Monday
 Day <- read_csv("day.csv") %>% 
@@ -175,15 +177,19 @@ ggplot(Day.Train, aes(weathersit, cnt)) +
 
 ## Linear regression
 
-A linear regression model fits explanatory variable(s) to a response variable. The coefficients for the variables are given based on the line that would provide the smallest number when calculating the squared difference between the observed values to the expected values along the line. If there is a singular explanatory variable to predict the explanatory variable, it would be considered a simple linear regression. If there are more than one variable, interaction terms, and/or polynomial terms then it is considered multiple linear regression. 
+A linear regression model fits explanatory variable(s) to a response variable. The coefficients for the variables are given based on the line that would provide the smallest number when calculating the squared difference between the observed values to the expected values along the line. If there is a singular explanatory variable to predict the explanatory variable, it would be considered a simple linear regression. If there are more than one variable, interaction terms, and/or polynomial terms then it is considered multiple linear regression.  
 
 ```{r}
 lm1.fit <- lm(cnt ~ atemp*season, data = Day.Train)
+```
 
+```{r, echo=FALSE}
+Day.Train <- Day.Train %>% select(-workingday)
+```
 
+```{r}
 lm2.fit <- lm(cnt~ ., data = Day.Train)
 lm2.fit <- step(lm2.fit, trace = FALSE, direction = "both")
-
 ```
 
 ## Random Forest
@@ -208,9 +214,8 @@ tunegrid <- expand.grid(B,lambda,d, min)
 names(tunegrid) <- c("n.trees","shrinkage","interaction.depth","n.minobsinnode")
 boosted.fit <- train(cnt ~. , data = Day.Train,
                      method = "gbm",
-                     trControl = trainControl(method = "repeatedcv",
-                                         number = 10,
-                                         repeats = 5),
+                     trControl = trainControl(method = "cv",
+                                         number = 5),
                      tuneGrid = tunegrid)
 ```
 
@@ -218,16 +223,24 @@ boosted.fit <- train(cnt ~. , data = Day.Train,
 ```{r}
 lm1.pred <- predict(lm1.fit, newdata=Day.Test)
 lm1.RMSE <- postResample(lm1.pred,Day.Test$cnt)[[1]]
+```
 
+```{r}
 lm2.pred <- predict(lm2.fit, newdata=Day.Test)
 lm2.RMSE <- postResample(lm2.pred,Day.Test$cnt)[[1]]
+```
 
+```{r}
 rf.pred <- predict(rf.fit, newdata = Day.Test)
 rf.RMSE <- postResample(rf.pred,Day.Test$cnt)[[1]]
+```
 
+```{r}
 boosted.pred <- predict(boosted.fit, newdata = Day.Test)
 boosted.RMSE <- postResample(boosted.pred,Day.Test$cnt)[[1]]
+```
 
+```{r}
 RMSE <- data.frame( Model = c("LM1", "LM2", "RF", "Boosted"),
                     RMSE = c(lm1.RMSE, lm2.RMSE, rf.RMSE, boosted.RMSE))
 kable(RMSE)
@@ -237,8 +250,8 @@ kable(RMSE)
 Models <- c("Linear Model 1", "Linear Model 2", "The Random Forest Model", "The Boosted Tree Model")
 ```
 
-The model with the lowest RMSE is `r Models[which.min(RMSE$RMSE)]` with an RMSE of `r RMSE$RMSE[which.min(RMSE$RMSE)]`. `r Models[which.min(RMSE$RMSE)]` is the **winner** for `r Weekdays[day]`'s data!
+The model with the lowest RMSE is `r Models[which.min(RMSE$RMSE)]` with an RMSE of `r round(RMSE$RMSE[which.min(RMSE$RMSE)],2)`. `r Models[which.min(RMSE$RMSE)]` is the **winner** for `r Weekdays[day]`'s data!
 
-# Automation
+
 
 
