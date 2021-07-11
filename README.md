@@ -1,37 +1,53 @@
-## Welcome to GitHub Pages
+# Bike Sharing Project 
 
-You can use the [editor on GitHub](https://github.com/maggief2/ST558Project2/edit/main/README.md) to maintain and preview the content for your website in Markdown files.
+## Purpose
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+The purpose of this repo is to explore the [bike sharing data set](https://archive.ics.uci.edu/ml/datasets/Bike+Sharing+Dataset), create predictive
+models, determine the best performing model based on the residual mean square error, and automating Markdown reports.  
 
-### Markdown
+## Packages
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+The packages needed to run the R code are: 
 
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+```{r, message = FALSE}
+library(tidyverse)
+library(caret)
+library(grid)
+library(gridExtra)
+library(knitr)
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+## Links to each analysis by day
 
-### Jekyll Themes
+The analysis for [Monday is available here](MondayAnalysis.md).
+The analysis for [Tuesday is available here](TuesdayAnalysis.md).
+The analysis for [Wednesday is available here](WednesdayAnalysis.md).
+The analysis for [Thursday is available here](ThursdayAnalysis.md).
+The analysis for [Friday is available here](FridayAnalysis.md).
+The analysis for [Saturday is available here](SaturdayAnalysis.md).
+The analysis for [Sunday is available here](SundayAnalysis.md).
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/maggief2/ST558Project2/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+## Automating Analysis Report Generation
 
-### Support or Contact
+Below is the code used to automatically generate the analysis reports for each day of the week.
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+```{r}
+# Defining Weekdays
+Weekdays <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
+# Creating File Names
+output_file <- paste0(Weekdays, "Analysis.md")
+
+# Create a list for each day with just the day name parameter
+params <- lapply(Weekdays, FUN=function(x){list(day = x)})
+
+# put into a data frame
+reports <- tibble(output_file, params)
+
+apply(reports, MARGIN = 1,
+      FUN = function(x){
+        rmarkdown::render(input = "ST558Project2.Rmd", 
+                          output_file = x[[1]],
+                          params = x[[2]])
+      })
+```
