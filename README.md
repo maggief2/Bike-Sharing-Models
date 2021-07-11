@@ -9,7 +9,7 @@ models, determine the best performing model (based on the residual mean square e
 
 The packages needed to run the R code are: 
 
-```{r, message = FALSE}
+```{r}
 library(tidyverse)
 library(caret)
 library(grid)
@@ -20,6 +20,7 @@ library(knitr)
 ## Links to each analysis by day
 
 The analysis for:
+
 * [Monday is available here](MondayAnalysis.md).
 * [Tuesday is available here](TuesdayAnalysis.md).
 * [Wednesday is available here](WednesdayAnalysis.md).
