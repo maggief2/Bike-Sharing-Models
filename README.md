@@ -3,7 +3,7 @@
 ## Purpose
 
 The purpose of this repo is to explore the [bike sharing data set](https://archive.ics.uci.edu/ml/datasets/Bike+Sharing+Dataset), create predictive
-models, determine the best performing model based on the residual mean square error, and automating Markdown reports.  
+models, determine the best performing model (based on the residual mean square error), and automate Markdown reports.  
 
 ## Packages
 
@@ -19,13 +19,14 @@ library(knitr)
 
 ## Links to each analysis by day
 
-The analysis for [Monday is available here](MondayAnalysis.md).
-The analysis for [Tuesday is available here](TuesdayAnalysis.md).
-The analysis for [Wednesday is available here](WednesdayAnalysis.md).
-The analysis for [Thursday is available here](ThursdayAnalysis.md).
-The analysis for [Friday is available here](FridayAnalysis.md).
-The analysis for [Saturday is available here](SaturdayAnalysis.md).
-The analysis for [Sunday is available here](SundayAnalysis.md).
+The analysis for:
+* [Monday is available here](MondayAnalysis.md).
+* [Tuesday is available here](TuesdayAnalysis.md).
+* [Wednesday is available here](WednesdayAnalysis.md).
+* [Thursday is available here](ThursdayAnalysis.md).
+* [Friday is available here](FridayAnalysis.md).
+* [Saturday is available here](SaturdayAnalysis.md).
+* [Sunday is available here](SundayAnalysis.md).
 
 ## Automating Analysis Report Generation
 
